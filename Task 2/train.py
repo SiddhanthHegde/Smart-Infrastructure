@@ -8,48 +8,22 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn import preprocessing	
 
-class Encode(nn.Module):
+class M1(nn.Module):
     def __init__(self):
         super(Encode,self).__init__()
-        self.lstm = nn.LSTM(3,1)
-        self.fc1 = nn.Linear(20,10)
-        self.fc2 = nn.Linear(10,1)
+        self.conv1 = nn.Conv1d(3,3,10)
+        self.conv2 = nn.Conv1d(3,3,10)
 
     def forward(self,x):
-        output, _ = self.lstm(x)
-        x = output.squeeze(2)
-        x = self.fc1(x)
-        x = self.fc2(x)
-        return x
-
-class Decode(nn.Module):
-    def __init__(self):
-        super(Encode,self).__init__()
-        self.convt1 = nn.ConvTranspose1d(1,2,10)
-        self.convt2 = nn.ConvTranspose1d(2,3,11)
-
-    def forward(self,x):
-        x = x.unsqueeze(2)
-        x = self.convt1(x)
-        x = self.convt2(x)
+        x = x.permute(0,2,1)
+        x = self.conv1(x)
+        x = self.conv2(x)
         x = x.permute(0,2,1)
         return x
 
-class Compressor(nn.Module):
-  def __init__(self):
-    super(Compressor,self).__init__()
-    self.enc = Encode()
-    self.dec = Decode()
-
-  def forward(self,x):
-    encoded = self.enc(x)
-    decoded = self.dec(encoded)
-
-    return encoded, decoded
-
 device = 'cuda' if torch.cuda_is_available() else 'cpu'
 # defining the model
-model = Compressor()
+model = M1()
 # defining the optimizer
 optimizer = optim.Adam(model.parameters())
 # defining the loss function
@@ -71,7 +45,7 @@ for i in range(epochs):
 
     optimizer.zero_grad()
 
-    _, output = model(data)
+    output = model(data)
     #print(output.shape)
     L = criterion(output, data)
     #print(output.shape,data.shape)
